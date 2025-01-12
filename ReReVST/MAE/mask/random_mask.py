@@ -6,8 +6,12 @@ import math
 import re
 import cv2
 from PIL import Image
-
-# --- 图像分割 ---
+"""
+Split the image into patches and mask pacthes randomly (remain 100 pathces unmask)
+Save the mask (boolean) as an array
+Save the effective unmasked patches and finally stitch the unmasked patches to generate an image
+"""
+# --- img to patches ---
 def img2p(image_path, patch_size):
     ori_img = cv2.imread(image_path)
     img_resized = cv2.resize(ori_img, (224, 224), interpolation=cv2.INTER_AREA)
@@ -33,7 +37,7 @@ def img2p(image_path, patch_size):
 
         mask_array.append(row_mask)
 
-    # 随机选择100个patches设置为unmask
+    # randomly choose 100 patches unmask, can change
     total_patches = len(patches)
     indices_to_unmask = random.sample(range(total_patches), min(total_patches, 100))
     for idx in indices_to_unmask:
@@ -41,7 +45,7 @@ def img2p(image_path, patch_size):
 
     return patches, mask_array
 
-# --- patches拼接 ---
+# --- patches to img ---
 def p2img(patches, mask_array, patch_size, img_size, output_image_path):
     patch_width, patch_height = patch_size
     img_width, img_height = img_size
@@ -52,7 +56,6 @@ def p2img(patches, mask_array, patch_size, img_size, output_image_path):
         for left in range(0, img_width, patch_width):
             patch = patches[top // patch_height * (img_width // patch_width) + left // patch_width]
             
-            # 检查是否被mask
             if mask_array[top // patch_height][left // patch_width] == 1:
                 patch = Image.new('RGB', patch.size, (150, 150, 150))
 
@@ -82,7 +85,7 @@ def stitch(patches, patch_size, output_image_path):
 
     stitched_img.save(output_image_path)
 
-# ---
+# --- process ---
 def process_images(input_dir, output_dir, mask_array_dir, patch_size=(16, 16), stitch_dir=None):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -112,9 +115,9 @@ def process_images(input_dir, output_dir, mask_array_dir, patch_size=(16, 16), s
             stitch_output_image_path = os.path.join(stitch_dir, f"{img_name_without_ext}.jpg")
             stitch(non_mask_patches, patch_size, stitch_output_image_path)
 
-input_dir = "/home/sem/Videos/ReReVST-Code/MAE/input_fox"  
-output_dir = "/home/sem/Videos/ReReVST-Code/MAE/mask_f100"  
-mask_array_dir = "/home/sem/Videos/ReReVST-Code/MAE/mask_f100_array" 
-stitch_dir = "/home/sem/Videos/ReReVST-Code/MAE/stitch_f100"
+input_dir = ""  
+output_dir = ""  
+mask_array_dir = "" 
+stitch_dir = ""
 
 process_images(input_dir, output_dir, mask_array_dir, patch_size=(16, 16), stitch_dir=stitch_dir)
