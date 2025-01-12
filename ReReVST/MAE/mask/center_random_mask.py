@@ -6,8 +6,12 @@ import math
 import re
 import cv2
 from PIL import Image
-
-# --- 图像分割 ---
+"""
+Split the image into patches and mask patches (remain 64 center and 57 random patches unmask)
+Save the mask (boolean) as an array
+Save the effective unmasked patches and finally stitch the unmasked patches to generate an image
+"""
+# --- img to patches ---
 def img2p(image_path, patch_size, mask_array):
     ori_img = cv2.imread(image_path)
     img_resized = cv2.resize(ori_img, (224, 224), interpolation=cv2.INTER_AREA)
@@ -28,7 +32,7 @@ def img2p(image_path, patch_size, mask_array):
 
     return patches, mask_array
 
-# --- patches拼接 ---
+# --- patches to img ---
 def p2img(patches, mask_array, patch_size, img_size, output_image_path):
     patch_width, patch_height = patch_size
     img_width, img_height = img_size
@@ -39,7 +43,6 @@ def p2img(patches, mask_array, patch_size, img_size, output_image_path):
         for left in range(0, img_width, patch_width):
             patch = patches[top // patch_height * (img_width // patch_width) + left // patch_width]
             
-            # 检查是否被mask
             if mask_array[top // patch_height][left // patch_width] == 1:
                 patch = Image.new('RGB', patch.size, (150, 150, 150))
 
@@ -56,8 +59,7 @@ def stitch(patches, patch_size, output_image_path):
     patch_width, patch_height = patch_size
     num_patches = len(patches)
     
-    # 计算需要多少行和列
-    num_cols = int(math.sqrt(num_patches))  # 排列成正方形
+    num_cols = int(math.sqrt(num_patches)) 
     num_rows = num_patches // num_cols + (1 if num_patches % num_cols else 0)
 
     stitched_img = Image.new('RGB', (num_cols * patch_width, num_rows * patch_height))
@@ -69,7 +71,7 @@ def stitch(patches, patch_size, output_image_path):
 
     stitched_img.save(output_image_path)
 
-# --- 生成固定的mask数组 ---
+# --- mask_array ---
 def generate_fixed_mask_array(img_size, patch_size, num_unmasked):
     img_width, img_height = img_size
     patch_width, patch_height = patch_size
@@ -77,19 +79,19 @@ def generate_fixed_mask_array(img_size, patch_size, num_unmasked):
     num_patches = (img_width // patch_width) * (img_height // patch_height)
     mask_array = [[1] * (img_width // patch_width) for _ in range(img_height // patch_height)]
 
-    # 保留中间64个patches
+    # remain center 64 patches(can change)
     for row in range(2, 10):
         for col in range(2, 10):
             mask_array[row][col] = 0
 
-    # 从mask_array中随机选择num_unmasked个设置为0
+    # randomly choose num_unmasked 0 from mask_array
     indices_to_unmask = random.sample([i for i in range(num_patches) if mask_array[i // (img_height // patch_height)][i % (img_width // patch_width)] == 1], num_unmasked)
     for idx in indices_to_unmask:
         mask_array[idx // (img_height // patch_height)][idx % (img_width // patch_width)] = 0
 
     return mask_array
 
-# --- 处理图像 ---
+# --- proscess ---
 def process_images(input_dir, output_dir, mask_array_dir, patch_size=(16, 16), stitch_dir=None):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -101,9 +103,8 @@ def process_images(input_dir, output_dir, mask_array_dir, patch_size=(16, 16), s
         os.makedirs(stitch_dir)
         
     image_files = [f for f in os.listdir(input_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
-
-    # 生成固定的mask数组
-    fixed_mask_array = generate_fixed_mask_array((224, 224), patch_size, 57)
+    
+    fixed_mask_array = generate_fixed_mask_array((224, 224), patch_size, 57)#randomly remain 57 patches unmask(can change)
 
     for image_file in image_files:
         image_path = os.path.join(input_dir, image_file)
@@ -122,10 +123,10 @@ def process_images(input_dir, output_dir, mask_array_dir, patch_size=(16, 16), s
             stitch_output_image_path = os.path.join(stitch_dir, f"{img_name_without_ext}.jpg")
             stitch(non_mask_patches, patch_size, stitch_output_image_path)
 
-input_dir = "/home/sem/Videos/ReReVST-Code/MAE/input_fox"  
-output_dir = "/home/sem/Videos/ReReVST-Code/MAE/mask_6457"  
-mask_array_dir = "/home/sem/Videos/ReReVST-Code/MAE/mask_6457_array" 
-stitch_dir = "/home/sem/Videos/ReReVST-Code/MAE/stitch_6457" 
+input_dir = ""  
+output_dir = ""  
+mask_array_dir = "" 
+stitch_dir = "" 
 
 process_images(input_dir, output_dir, mask_array_dir, patch_size=(16, 16), stitch_dir=stitch_dir)
 print("Imgs are all divided to patches and are stitched.")
