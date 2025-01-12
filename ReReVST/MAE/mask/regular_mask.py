@@ -8,10 +8,12 @@ from PIL import Image
 
 
 """
-将图像分割成patch并mask后再拼接好,是否mask(bool)存为数组.json,将未mask的有效patches保存,并在最后拼接未mask的patches生成图像
+Split the image into patches and mask regularly
+Save the mask (boolean) as an array
+Save the effective unmasked patches and finally stitch the unmasked patches to generate an image
 """
 
-# --- 图像分割 ---
+# --- img to patches ---
 
 def img2p(image_path, patch_size):
     
@@ -49,7 +51,7 @@ def img2p(image_path, patch_size):
 
     return patches, mask_array
 
-# --- patches拼接 ---
+# --- patches to img ---
 def p2img(patches, mask_array, patch_size, img_size, output_image_path):
     patch_width, patch_height = patch_size
     img_width, img_height = img_size
@@ -93,8 +95,7 @@ def stitch(patches, patch_size, output_image_path):
     patch_width, patch_height = patch_size
     num_patches = len(patches)
     
-    # 计算需要多少行和列
-    num_cols = int(math.sqrt(num_patches))  # 排列成正方形
+    num_cols = int(math.sqrt(num_patches))
     num_rows = num_patches // num_cols + (1 if num_patches % num_cols else 0)
 
     stitched_img = Image.new('RGB', (num_cols * patch_width, num_rows * patch_height))
@@ -131,7 +132,7 @@ def process_images(input_dir, output_dir, mask_array_dir, patch_size=(16, 16), s
         p2img(patches, mask_array, patch_size, img_size=(224, 224), output_image_path=output_image_path)
         
         # save mask_array
-        img_name_without_ext = os.path.splitext(image_file)[0]  # 去掉文件扩展名
+        img_name_without_ext = os.path.splitext(image_file)[0]
         mask_array_file = os.path.join(mask_array_dir, f"{img_name_without_ext}.json")
         save_mask_array(mask_array, mask_array_file)
 
@@ -145,10 +146,10 @@ def process_images(input_dir, output_dir, mask_array_dir, patch_size=(16, 16), s
 
 
 
-input_dir = "/home/sem/Videos/ReReVST-Code/MAE/input_fox"  
-output_dir = "/home/sem/Videos/ReReVST-Code/MAE/mask75_fox"  
-mask_array_dir = "/home/sem/Videos/ReReVST-Code/MAE/mask75_array" 
-stitch_dir = "/home/sem/Videos/ReReVST-Code/MAE/stitch_75fox"
+input_dir = ""  
+output_dir = ""  
+mask_array_dir = "" 
+stitch_dir = ""
 
 process_images(input_dir, output_dir, mask_array_dir, patch_size=(16, 16), stitch_dir=stitch_dir)
 print("Imgs are all divided to patches and are stitched.")
