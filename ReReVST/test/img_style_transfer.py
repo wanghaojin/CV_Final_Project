@@ -7,11 +7,11 @@ from framework import Stylization
 ## -------------------
 ##  Parameters
 for num in range(1,5):
-    style_img = '/home/sem/Videos/ReReVST-Code/test/styles/kandinsky.jpg'  
-    content_dir = f"/home/sem/Videos/ReReVST-Code/MAE/stitch_75fox" 
-    checkpoint_path = "/home/sem/Videos/ReReVST-Code/test/Model/style_net-TIP-final.pth"
+    style_img = ''  
+    content_dir = "" 
+    checkpoint_path = ""
     cuda = torch.cuda.is_available()
-    result_path = f'/home/sem/Videos/ReReVST-Code/MAE/stitch_75fox_transfer/'
+    result_path = ''
 
     ## -------------------
     ##  Tools
@@ -58,7 +58,7 @@ for num in range(1,5):
 
         content_image = read_img(content_img_path)
         
-        new_content_image = reshape.process(content_image)# 补齐处理
+        new_content_image = reshape.process(content_image)
         styled_image = framework.transfer(new_content_image)
         
         H, W, C = content_image.shape
